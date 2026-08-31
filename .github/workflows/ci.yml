@@ -97,17 +97,55 @@ jobs:
             sbcl
 
       - name: Install Quicklisp and dependencies
+        shell: bash
         run: |
-          if [ ! -f ~/quicklisp/setup.lisp ]; then
-          curl -fsSL https://beta.quicklisp.org/quicklisp.lisp -o /tmp/quicklisp.lisp
-          sbcl --non-interactive \
-          --load /tmp/quicklisp.lisp \
-          --eval '(quicklisp-quickstart:install :path (merge-pathnames "quicklisp/" (user-homedir-pathname)))' \
-          --eval '(ql-util:without-prompting (ql:add-to-init-file))'
+          set -euo pipefail
+
+          retry() {
+            local max_attempts="$1"
+            shift
+            local delay=5
+            local attempt
+
+            for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+              if "$@"; then
+                return 0
+              fi
+              if ((attempt == max_attempts)); then
+                echo "Command failed after ${max_attempts} attempts: $*" >&2
+                return 1
+              fi
+              echo "Attempt ${attempt}/${max_attempts} failed; retrying in ${delay}s: $*" >&2
+              sleep "$delay"
+              delay=$((delay * 2))
+            done
+          }
+
+          install_quicklisp() {
+            # A failed initial install can leave setup.lisp present with an
+            # incomplete dist index. Start each retry from a clean directory.
+            rm -rf "$HOME/quicklisp"
+            curl --fail --show-error --location \
+              --retry 5 --retry-all-errors --retry-delay 2 \
+              https://beta.quicklisp.org/quicklisp.lisp \
+              -o /tmp/quicklisp.lisp || return 1
+            sbcl --non-interactive \
+              --load /tmp/quicklisp.lisp \
+              --eval '(quicklisp-quickstart:install :path (merge-pathnames "quicklisp/" (user-homedir-pathname)))' \
+              --eval '(ql-util:without-prompting (ql:add-to-init-file))' || return 1
+          }
+
+          if [ ! -s ~/quicklisp/setup.lisp ] || [ ! -s ~/quicklisp/dists/quicklisp/systems.txt ]; then
+            retry 3 install_quicklisp
           fi
-          sbcl --non-interactive \
-          --eval "(ql:quickload '(alexandria iterate nibbles cl-ppcre cl-fad closer-mop trivial-gray-streams) :silent t)" \
-          --eval '(quit)'
+
+          quickload_dependencies() {
+            sbcl --non-interactive \
+              --eval "(ql:quickload '(alexandria iterate nibbles cl-ppcre cl-fad closer-mop trivial-gray-streams) :silent t)" \
+              --eval '(quit)'
+          }
+
+          retry 3 quickload_dependencies
 
       - name: Build cold image
         run: |
