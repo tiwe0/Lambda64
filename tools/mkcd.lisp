@@ -45,7 +45,7 @@
                               :direction :output
                               :if-does-not-exist :create)
              (format s "set \"timeout\" 1~%")
-             (format s "entry \"Mezzano\" {~%")
+             (format s "entry \"Lambda64\" {~%")
              (loop for (name . value) in kboot-options
                 do (format s "  set ~S ~S~%" name value))
              (format s "  mezzano ~S~%" disk)

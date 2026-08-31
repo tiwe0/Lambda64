@@ -74,7 +74,7 @@ The fault stack has this layout after an interrupt:
 ## Building from the repl
 
 ```lisp
-; from the MBuild/Mezzano directory
+; from the Lambda64 checkout
 (asdf:load-system :lispos)
 (asdf:load-system :lispos-file)
 (file-server::spawn-file-server)

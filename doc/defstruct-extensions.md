@@ -1,6 +1,6 @@
 # Defstruct extensions
 
-Mezzano supports a number of extentions to the `defstruct` facility, primarily to allow more precise control over the in-memory layout of instances.
+Lambda64 supports a number of extensions to the `defstruct` facility, primarily to allow more precise control over the in-memory layout of instances.
 
 ## Struct option `:area`
 

@@ -119,7 +119,7 @@
   ;; Copy Mezz source.
   (copy-many (merge-pathnames "**/*.*" *default-pathname-defaults*)
              *default-pathname-defaults*
-             #p"LOCAL:>Mezzano>"
+             #p"LOCAL:>Lambda64>"
              :filter 'file-filter)
   ;; And everything else.
   (copy-many (merge-pathnames "*/**/*.*" (user-homedir-pathname))
@@ -215,7 +215,7 @@
                   (list '("LOCAL:>Icons>quake.png" "Quake" "(sdlquake:spawn)"))))))
 
 ;; Cutting a release:
-;; Start from a clean checkout of mbuild
+;; Start from a clean checkout of LBuild.
 ;; Ensure that Iota is present (or linked) and built in the home directory
 ;; Set *lisp-implementation-version* appropriately (system/environment.lisp)
 ;; Optional: Point ASDF source registry at (pathname "SYS:HOME;") (ipl.lisp, HOME-SOURCE-REGISTRY) instead of (user-homedir-pathname). This gets the source paths right for ED.
@@ -268,13 +268,13 @@
         mezzano.gui.compositor:*screensaver-time* (* 15 60))
   (setf (logical-pathname-translations "SYS")
         '(("HOME;**;*.*.*" #P"LOCAL:>Source>**>")
-          ("SOURCE;**;*.*.*" #P"LOCAL:>Mezzano>**>")))
+          ("SOURCE;**;*.*.*" #P"LOCAL:>Lambda64>**>")))
   (setf mezzano.gui.desktop::*icons*
         (append mezzano.gui.desktop::*icons*
                 '(:next-column
-                  ("LOCAL:>Icons>Editor.png" "Supporters!" "(ed \"LOCAL:>Mezzano>SUPPORTERS.md\")")
-                  ("LOCAL:>Icons>Editor.png" "Readme" "(ed \"LOCAL:>Mezzano>README.md\")")
-                  ("LOCAL:>Icons>Editor.png" "Quickstart Guide" "(ed \"LOCAL:>Mezzano>doc>quickstart.md\")"))))
+                  ("LOCAL:>Icons>Editor.png" "Supporters!" "(ed \"LOCAL:>Lambda64>SUPPORTERS.md\")")
+                  ("LOCAL:>Icons>Editor.png" "Readme" "(ed \"LOCAL:>Lambda64>README.md\")")
+                  ("LOCAL:>Icons>Editor.png" "Quickstart Guide" "(ed \"LOCAL:>Lambda64>doc>quickstart.md\")"))))
   #+(or)
   (setf (sys.int::symbol-global-value '*terminal-io*)
         (make-instance 'mezzano.gui.popup-io-stream:lazy-popup-io-stream))

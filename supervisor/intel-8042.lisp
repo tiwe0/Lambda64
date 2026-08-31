@@ -41,14 +41,14 @@ This interrupt request number is the x86-specific value.")
   "Mask for bit 0 of the status register.
 Bit 0 is clear, 0, if the output buffer is empty, or set, 1, if the
 output buffer is full.  The term \"output\" is relative to the PS/2
-device; the PS/2 device sends output to the 8042.  Therefore Mezzano
+device; the PS/2 device sends output to the 8042.  Therefore Lambda64
 reads from the output buffer.")
 (defconstant +status-mask-input-buffer-full+ #x2
   "Mask for bit 1 of the status register.
 Bit 1 is clear, 0, if the input buffer is empty, or set, 1, if the
 output buffer is full.  The term \"input\" is relative to the PS/2
 device; the PS/2 device receives input from the 8042.  Therefore
-Mezzano writes to the input buffer.")
+Lambda64 writes to the input buffer.")
 
 ;; PS/2 controller communication timeout.
 (defconstant +delay+ 0.01
@@ -187,7 +187,7 @@ REGISTER is one of `+register-data+' or
 
 (defun wait-until-input-is-available ()
   "Wait until the PS/2 controller's output buffer is full.
-The term \"input\" is relative to Mezzano.  Return t if Mezzano can
+The term \"input\" is relative to Lambda64.  Return t if Lambda64 can
 read input from the PS/2 controller, or nil if waiting timed out."
   (loop for interval from 1 upto +timeout+ thereis (data)
         do (sup:safe-sleep +delay+)))
@@ -198,7 +198,7 @@ read input from the PS/2 controller, or nil if waiting timed out."
 
 (defun wait-until-output-is-possible ()
   "Wait until the PS/2 controller's input buffer is empty.
-The term \"output\" is relative to Mezzano.  Return t if Mezzano can
+The term \"output\" is relative to Lambda64.  Return t if Lambda64 can
 write output to the PS/2 controller, or nil if waiting timed out."
   (loop for interval from 1 upto +timeout+ thereis (room-in-buffer)
         do (sup:safe-sleep +delay+)))

@@ -1,5 +1,5 @@
-;;; Load the cold-generator on Mezzano.
-;;; Expects *DEFAULT-PATHNAME-DEFAULTS* to point at the Mezzano source directory.
+;;; Load the cold-generator on Lambda64.
+;;; Expects *DEFAULT-PATHNAME-DEFAULTS* to point at the Lambda64 source directory.
 
 (in-package :mezzano.internals)
 

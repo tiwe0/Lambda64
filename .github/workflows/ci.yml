@@ -1,11 +1,11 @@
 name: CI
 
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
+  # Build the main and ARM64 development branches.
   push:
-    branches: ["github-ci-build-test", master]
+    branches: ["github-ci-build-test", master, arm64]
   pull_request:
-    branches: [master]
+    branches: [master, arm64]
   workflow_dispatch:
 
 concurrency:
@@ -22,79 +22,62 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - arch: x86-64
-            timeout: 45
-            qemu_bin: qemu-system-x86_64
+          # ARM64 currently runs under TCG on GitHub-hosted x86-64 runners and
+          # can take more than an hour during first-boot compilation.
+          - arch: arm64
+            timeout: 90
+            qemu_bin: qemu-system-aarch64
             qemu_machine: >-
-              -enable-kvm
-              -hda mezzano.image
-              -vga std
-              -netdev user,id=net0
-              -device virtio-net,netdev=net0
-              -device isa-debug-exit,iobase=0xf4,iosize=0x04
-            qemu_exit_pass: 3
+              -machine virt
+              -cpu max
+              -kernel Lambda64/tools/kboot/kboot-generic-arm64.bin
+              -device virtio-gpu-device
+              -device virtio-keyboard-device
+              -device virtio-mouse-device
+              -drive if=none,file=lambda64.image,id=blk,format=raw
+              -device virtio-blk-device,drive=blk
+              -netdev user,id=vmnic,hostname=lambda64
+              -device virtio-net-device,netdev=vmnic
+              -semihosting-config enable=on,target=native
+            qemu_exit_pass: 0
             qemu_exit_fail: 1
-          # Works but takes too long without nested virt support, over an hour.
-          #- arch: arm64
-          #  timeout: 60
-          #  qemu_bin: qemu-system-aarch64
-          #  qemu_machine: >-
-          #    -machine virt
-          #    -cpu max
-          #    -kernel Mezzano/tools/kboot/kboot-generic-arm64.bin
-          #    -device virtio-gpu-device
-          #    -device virtio-keyboard-device
-          #    -device virtio-mouse-device
-          #    -drive if=none,file=mezzano.image,id=blk,format=raw
-          #    -device virtio-blk-device,drive=blk
-          #    -netdev user,id=vmnic,hostname=qemu
-          #    -device virtio-net-device,netdev=vmnic
-          #    -semihosting-config enable=on,target=native
-          #  qemu_exit_pass: 0
-          #  qemu_exit_fail: 1
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Checkout Mezzano
+      - name: Checkout Lambda64
         uses: actions/checkout@v6
         with:
           submodules: recursive
-          path: Mezzano           # -> $GITHUB_WORKSPACE/Mezzano
+          path: Lambda64          # -> $GITHUB_WORKSPACE/Lambda64
 
-      # Resolve MBuild's current HEAD SHA (used as the cache key)
-      - name: Get MBuild HEAD SHA
-        id: mbuild-sha
+      # Resolve LBuild's current HEAD SHA (used as the cache key).
+      - name: Get LBuild HEAD SHA
+        id: lbuild-sha
         run: |
-          echo "sha=$(git ls-remote https://github.com/froggey/MBuild refs/heads/master | cut -f1)" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git ls-remote https://github.com/tiwe0/LBuild refs/heads/arm64 | cut -f1)" >> "$GITHUB_OUTPUT"
 
-      - name: Restore MBuild cache
-        id: mbuild-cache
+      - name: Restore LBuild cache
+        id: lbuild-cache
         uses: actions/cache@v5
         with:
-          path: MBuild
-          key: mbuild-${{ steps.mbuild-sha.outputs.sha }}
-          # No restore-keys — a partial MBuild (wrong submodule state) is worse than none
+          path: LBuild
+          key: lbuild-${{ steps.lbuild-sha.outputs.sha }}
+          # No restore-keys — a partial LBuild (wrong submodule state) is worse than none.
 
-      - name: Checkout MBuild
-        if: steps.mbuild-cache.outputs.cache-hit != 'true'
+      - name: Checkout LBuild
+        if: steps.lbuild-cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v6
         with:
-          repository: froggey/MBuild
-          path: MBuild            # -> $GITHUB_WORKSPACE/MBuild
-          submodules: recursive
-          ref: master
+          repository: tiwe0/LBuild
+          path: LBuild            # -> $GITHUB_WORKSPACE/LBuild
+          ref: arm64
 
-      # Cached mbuild might have some llf files cached.
+      # Cached LBuild might have some llf files cached.
       # TODO: Figure out how to do out-of-tree builds.
-      - name: Clean MBuild
-        working-directory: MBuild
+      - name: Clean LBuild
+        working-directory: LBuild
         run: |
           rm -rf home/.cache/common-lisp/ home/.slime/ home/asdf/build/
-
-      - name: make asdf.lisp
-        working-directory: MBuild/home/asdf
-        run: |
-          make
 
       - name: Install apt packages
         run: |
@@ -106,18 +89,12 @@ jobs:
           fi
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
+            bzip2 \
             curl \
             qemu-system \
             git \
-            lsof
-
-      - name: Install SBCL 2.4.8
-        run: |
-          cd /tmp/
-          wget -q https://github.com/sbcl/sbcl/releases/download/sbcl-1.4.14/sbcl-2.4.8-x86-64-linux-binary.tar.bz2
-          tar xf sbcl-2.4.8-x86-64-linux-binary.tar.bz2
-          cd sbcl-2.4.8-x86-64-linux/
-          sudo ./install.sh
+            lsof \
+            sbcl
 
       - name: Install Quicklisp and dependencies
         run: |
@@ -132,62 +109,23 @@ jobs:
           --eval "(ql:quickload '(alexandria iterate nibbles cl-ppcre cl-fad closer-mop trivial-gray-streams) :silent t)" \
           --eval '(quit)'
 
-      - name: Generate config.lisp
-        working-directory: Mezzano
-        run: |
-          echo "(in-package :mezzano.internals)" > config.lisp
-          echo "(defparameter *file-server-host-ip* \"10.0.2.2\")" >> config.lisp
-          echo "(defparameter *home-directory-path* \"REMOTE:${GITHUB_WORKSPACE}/MBuild/home/\")" >> config.lisp
-          echo "(defparameter *mezzano-source-path* \"REMOTE:${GITHUB_WORKSPACE}/Mezzano/\")" >> config.lisp
-          # we're in a hurry!
-          echo "(setf *compile-parallel* t)" >> config.lisp
-          cat config.lisp
-
       - name: Build cold image
-        working-directory: Mezzano
         run: |
           set -o pipefail
-          sed -i 's/:architecture :x86-64/:architecture :${{ matrix.arch }}/g' \
-            $GITHUB_WORKSPACE/MBuild/build-cold-image.lisp
-          sbcl --non-interactive \
-            --load $GITHUB_WORKSPACE/MBuild/build-cold-image.lisp \
-            --eval '(quit)' \
-          2>&1 | tee "${{ github.workspace }}/build-cold-image.log"
+          make -C LBuild \
+            LAMBDA64_DIR=../Lambda64 \
+            IMAGE=../lambda64.image \
+            cold-image \
+            2>&1 | tee "${{ github.workspace }}/build-cold-image.log"
 
       - name: Start file server
-        working-directory: Mezzano/file-server
         run: |
-          sbcl --non-interactive \
-          --load $GITHUB_WORKSPACE/MBuild/run-file-server.lisp \
-          &> "${{ github.workspace }}/file-server.log" 2>&1 &
+          make -C LBuild LAMBDA64_DIR=../Lambda64 run-file-server \
+            &> "${{ github.workspace }}/file-server.log" &
           echo $! > "${{ github.workspace }}/file-server.pid"
           # Wait for the server to become ready.
           timeout 30 bash -c 'until lsof -i :2599 -sTCP:LISTEN >/dev/null 2>&1; do sleep 1; done'
           echo "File server ready (PID $(cat ${{ github.workspace }}/file-server.pid))"
-
-      # Sadly the native arm64 runners don't have nested virt enabled, so we only
-      # get this on x86-64. This is also why we run the arm64 build on an x86-64 runner,
-      # because they're usually slightly faster under TCG.
-      - name: Enable KVM access
-        if: matrix.arch == 'x86-64'
-        run: |
-          check_kvm_access() {
-            [ -e /dev/kvm ] || return 1
-            # Either the device is world read/write, or we're in the kvm group
-            if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
-              return 0
-            fi
-            id -nG | grep -qw kvm
-          }
-
-          if check_kvm_access; then
-            echo "KVM already accessible, skipping udev rule setup"
-          else
-            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-               | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-            sudo udevadm control --reload-rules
-            sudo udevadm trigger --name-match=kvm
-          fi
 
       - name: Run tests in QEMU
         shell: bash
@@ -198,7 +136,7 @@ jobs:
             -nographic \
             -monitor none \
             -serial stdio \
-            -smp $(nproc) \
+            -smp 4 \
             -no-reboot \
             ${{ matrix.qemu_machine }} \
           2>&1 | tee "${{ github.workspace }}/serial.log"
@@ -216,6 +154,13 @@ jobs:
               ;;
           esac
 
+      - name: Stop file server
+        if: always()
+        run: |
+          if [ -f "${{ github.workspace }}/file-server.pid" ]; then
+            kill "$(cat "${{ github.workspace }}/file-server.pid")" 2>/dev/null || true
+          fi
+
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -232,9 +177,9 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: mezzano-image-${{ github.run_id }}-${{ matrix.arch }}
+          name: lambda64-image-${{ github.run_id }}-${{ matrix.arch }}
           path: |
-            ${{ github.workspace }}/mezzano.image
-            ${{ github.workspace }}/mezzano.map
-            ${{ github.workspace }}/mezzano.symbol-table
+            ${{ github.workspace }}/lambda64.image
+            ${{ github.workspace }}/lambda64.map
+            ${{ github.workspace }}/lambda64.symbol-table
           retention-days: 3

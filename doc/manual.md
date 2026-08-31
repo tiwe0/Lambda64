@@ -6,7 +6,8 @@ See the [quickstart guide](quickstart.md).
 
 # Building
 
-See [MBuild](https://github.com/froggey/MBuild).
+See [LBuild](https://github.com/tiwe0/LBuild). LBuild is forked from the
+historical [MBuild](https://github.com/froggey/MBuild) upstream.
 
 # Networking
 

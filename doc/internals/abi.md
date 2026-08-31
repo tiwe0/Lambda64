@@ -240,7 +240,7 @@ The NLX thunk exists in the function containing `block`/`tagbody`, not the funct
 performing the NLX because the function performing the NLX does not have the
 correct GC metadata available during compilation.
 
-Mezzano currently implements `exit-extent:medium`, but this may change.
+Lambda64 currently implements `exit-extent:medium`, but this may change.
 
 `block`/`return-from` may use a more optimized value passing convention depending
 on the number of values expected at the block exit.

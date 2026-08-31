@@ -1,3 +1,7 @@
+> **Archived upstream documentation:** this guide describes the historical
+> Mezzano x86 dual-boot workflow. It is retained for upstream history and does
+> not describe the current Lambda64 ARM64/QEMU development path.
+
 # Creating and running Mezzano in a dual boot system.
 
 Creating and running Mezzano in a dual boot system takes three steps:

@@ -134,7 +134,7 @@
                           (eql (first type) 'vector)
                           (= (length type) 2)))
            (error "Invalid :TYPE option ~S.%" option)))
-        ;; Mezzano options
+        ;; Lambda64 options
         ;;
         ;; (:area name)
         ;; Set the allocation area for the structure.

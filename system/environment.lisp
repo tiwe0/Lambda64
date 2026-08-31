@@ -360,7 +360,7 @@ A list of two elements, the short & long name." )
 ;;; 25.1.3 Environment Inquiry.
 
 (defun lisp-implementation-type ()
-  "Mezzano")
+  "Lambda64")
 
 (defvar *git-revision*) ; Set by the cold generator.
 (defvar *lisp-implementation-version* "devel")
@@ -396,7 +396,7 @@ It is the implementation of UIOP's lisp-version-string function."
   #+arm64
   nil)
 
-;;; Mezzano uses no supporting software.
+;;; Lambda64 uses no supporting software.
 (defun software-type () nil)
 (defun software-version () nil)
 

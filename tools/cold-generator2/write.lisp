@@ -46,7 +46,7 @@
       (format t ";; Using ~S as the image header.~%" header-path))
     (when image-header-data
       (write-sequence image-header-data stream)
-      ;; Update the size of the third partition entry, the Mezzano partiton.
+      ;; Update the size of the third partition entry, the Lambda64 partition.
       (file-position stream #x1EA)
       (nibbles:write-ub32/le (truncate image-size 512) stream))
     ;; Pad image out to the proper size

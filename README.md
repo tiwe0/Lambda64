@@ -1,90 +1,91 @@
-# Mezzano, an operating system written in Common Lisp.
+# Lambda64
 
-![Screenshot](doc/screenshot1.png)
+Lambda64 is an operating system written in Common Lisp, forked from
+[froggey/Mezzano](https://github.com/froggey/Mezzano) and developed specifically
+for ARM64 (AArch64).
 
-## Pre-built images
+![Lambda64 desktop](doc/screenshot1.png)
 
-Demo releases are available through [GitHub](https://github.com/froggey/Mezzano/releases).
+## Project scope
 
-These releases are designed to be run in VirtualBox, though QEMU is also supported.
-2GB of RAM, a virtio-net NIC and an Intel HDA audio controller are recommended.
+Lambda64 is the ARM64-focused operating system maintained in this repository.
+Its primary development platform is QEMU's ARM `virt` machine, including a
+graphical VirtIO GPU, keyboard, and mouse.
 
-x86-64 images are published.  AArch64 has been made to work on some
-hardware.  But to set expectations: making Mezzano run on any given
-piece of hardware or emulator is still typically a project that
-requires the user to dig into the code.
+Mezzano is the historical upstream project. Some internal Common Lisp package names, boot
+protocol names, disk-format identifiers, and inherited output filenames still use
+the legacy `mezzano` name for compatibility; they are implementation details,
+not the Lambda64 project name.
 
 ## Building from source
 
-See the MBuild repo: (https://github.com/froggey/MBuild)
+Lambda64 uses [LBuild](https://github.com/tiwe0/LBuild) to generate its ARM64
+cold image. LBuild is the Lambda64 build tool and includes this repository as
+its `Lambda64/` submodule.
 
-For help & support or to follow development, join the #mezzano IRC channel on Libera Chat (irc.libera.chat)
+LBuild emits `lambda64.image`. The QEMU launcher also recognizes the legacy
+`mezzano.image` filename for images produced by the historical upstream build
+chain.
 
-## Major changes since Demo 4
+For day-to-day development, keep `Lambda64/` and `LBuild/` as sibling working
+trees and copy `LBuild/local.mk.example` to `LBuild/local.mk`. LBuild will then
+build the active sibling Lambda64 checkout. The pinned submodule remains the
+source of truth for reproducible CI and release builds.
 
-* USB stack by fittestbits
-* Improved overall file system support by fittestbits
-* EXT2/3/4 support has been implemented by Bruno Cichon (ebrasca)
-* GMA950 modesetting display driver
-* Hardware accelerated 3D support via qemu's Virgl device
-* Multicore/SMP support
-* Improved atomic operations
-* Async APIs: wait-for-objects, dispatch, and thread pools
-* Networking improvements: Server support, DHCP, TCP retransmit
-* Source locations are tracked for many kinds of definitions
-* Weak hash tables and other weak objects
-* Cleanup of object representation and unifcation of standard-object/structure-object
-* Unboxed structure slots
-* Short floats implemented using IEEE half floats
-* Unboxed (unsigned-byte 64) arithmetic
-* Stack overflows and memory faults are trapped and can be recovered from
-* Support for building on Windows
-* Major improvements to CLOS and MOP conformance
-* Keymap picker
-* More bug fixes, performance improvements and features
+## ARM64 development with QEMU
 
-## Major changes since Demo 3
+With an ARM64 image in the repository root or `build-arm64/`, start Lambda64 in
+graphical mode:
 
-* FAT32 support has been implemented by Bruno Cichon (ebrasca).
-* McCLIM has been ported by fittestbits.
-* Quicklisp has been ported by Peter S. Housel.
-* Improved introspection tools: DISASSEMBLE and ED have been implemented.
-* Generational collection has been added to the garbage collector.
-* New SSA-based compiler backend, supporting unboxed value representations.
-* Gray streams support has been overhauled.
+```sh
+./tools/run-qemu-arm64
+```
 
-## Major changes since Demo 2
+The launcher uses QEMU's `virt` machine with VirtIO block, network, GPU,
+keyboard, and mouse devices. It selects HVF automatically on Apple Silicon,
+KVM when available on Linux, and otherwise falls back to TCG.
 
-* Trentino, a media player, has been implemented by Eugene Zaikonnikov.
-* Further improvements to conformance, stability and performance.
-* The CLOS implementation follows the MOP much more closely.
-* More traditional window management.
-* Booting from CD/USB on real hardware is now possible.
-* Driver support for Intel HDA audio devices.
-* VirtualBox guest (mouse & display) integration.
+Use a different requested display size with:
 
-## Major changes since Demo 1
+```sh
+./tools/run-qemu-arm64 --resolution 1280x800
+```
 
-* Many improvements to conformance, stability and performance.
-* The editor has been greatly improved, thanks to Burton Samograd.
-* The system now functions correctly on computers with more than 1GB of RAM.
-* The allocator and garbage collector now make much better use of available memory, with far fewer GC cycles occuring.
-* (ROOM T) prints more detailed information about allocated objects.
-* Transparency and premultiplied alpha support in the GUI.
-* And more!
+For serial-only debugging or CI, keep the same virtual hardware while hiding
+the host display window:
 
-## Additional information
+```sh
+./tools/run-qemu-arm64 --headless
+```
 
-"Hypothymis azurea - Kaeng Krachan" by JJ Harrison (jjharrison89@facebook.com)
-[CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0)], via Wikimedia Commons
+Run `./tools/run-qemu-arm64 --help` for image, CPU, accelerator, display, and
+extra QEMU options.
+
+## Upstream
+
+- Operating-system upstream: [froggey/Mezzano](https://github.com/froggey/Mezzano)
+- Lambda64 build system: [tiwe0/LBuild](https://github.com/tiwe0/LBuild)
+- Historical build-system upstream: [froggey/MBuild](https://github.com/froggey/MBuild)
+- Upstream releases: [Mezzano releases](https://github.com/froggey/Mezzano/releases)
+- Upstream community: `#mezzano` on Libera Chat (`irc.libera.chat`)
+
+Upstream images and release notes describe Mezzano and should not be presented
+as Lambda64 ARM64 releases.
+
+## Asset attribution
+
+"Hypothymis azurea - Kaeng Krachan" by JJ Harrison
+([CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0)), via Wikimedia
+Commons:
 https://commons.wikimedia.org/wiki/File:Hypothymis_azurea_-_Kaeng_Krachan.jpg
 
-"Mandarin Pair" by © Francis C. Franklin / CC-BY-SA-3.0.
-Licensed under CC BY-SA 3.0 via Wikimedia Commons - http://commons.wikimedia.org/wiki/File:Mandarin_Pair.jpg
+"Mandarin Pair" by Francis C. Franklin, licensed under
+[CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0):
+http://commons.wikimedia.org/wiki/File:Mandarin_Pair.jpg
 
-"Handsome" by Andy Morffew - https://www.flickr.com/photos/andymorffew/19377769093/in/album-72157630893775092/
-[CC BY 2.0 (http://creativecommons.org/licenses/by/2.0)]
+"Handsome" by Andy Morffew:
+https://www.flickr.com/photos/andymorffew/19377769093/in/album-72157630893775092/
+([CC BY 2.0](http://creativecommons.org/licenses/by/2.0))
 
-Includes Dejavu Fonts 2.37 (https://dejavu-fonts.github.io/)
-
-Some icons from Icojam (http://www.icojam.com)
+Includes [DejaVu Fonts 2.37](https://dejavu-fonts.github.io/). Some icons are
+from [Icojam](http://www.icojam.com).

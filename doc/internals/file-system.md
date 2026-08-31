@@ -1,8 +1,8 @@
 <!--- -*- eval: (auto-fill-mode 1); eval: (flyspell-mode 1); -*- --->
 
-# File Systems on Mezzano
+# File Systems on Lambda64
 
-Each type of file system on Mezzano requires a host class which must
+Each type of file system on Lambda64 requires a host class which must
 be a superclass of file-system-host and implement the following
 methods:
 

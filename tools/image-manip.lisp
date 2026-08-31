@@ -258,7 +258,7 @@
       (when (not output-size)
         (setf output-size (* 512 1024 1024)))
       (write-sequence image-header-data output-stream)
-      ;; Update the size of the third partition entry, the Mezzano partiton.
+      ;; Update the size of the third partition entry, the Lambda64 partition.
       (file-position output-stream #x1EA)
       (nibbles:write-ub32/le (truncate (- output-size output-offset) 512) output-stream)
       (file-position output-stream (1- output-size))

@@ -14,14 +14,14 @@
 ;; 64KB entries, however, only the first 256 are defined. So, we use a
 ;; 256 entry array.
 ;;
-;; The Mezzano version only includes characters that are mapped in
+;; The Lambda64 runtime version only includes characters that are mapped in
 ;; gui/keymaps.lisp, all other entries are keywords. When a USB
 ;; keyboard generates a value that maps to a keyword entry, that value
 ;; is dropped (not passed on to the compositor code).
 ;;
-;; The non-Mezzano version is used for testing with SBCL which doesn't
+;; The host version is used for testing with SBCL, which doesn't
 ;; allow arbitrarily defined characters and therefore only supports a
-;; subset of the characters supported by Mezzano.
+;; subset of the characters supported by Lambda64.
 ;;
 ;; This is a read-only table, it is only written here during
 ;; initialized.

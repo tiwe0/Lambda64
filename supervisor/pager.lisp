@@ -183,7 +183,7 @@ the data. Free the page with FREE-PAGE when done."
       ;; Read first 4k, figure out what to do with it.
       (when (not (disk-read disk 0 (ceiling +4k-page-size+ sector-size) page-addr))
         (panic "Unable to read first block on disk " disk))
-      ;; Search for a Mezzano header here.
+      ;; Search for a Lambda64 image header here.
       (unwind-protect
            (flet ((check-magic ()
                     (loop
